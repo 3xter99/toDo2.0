@@ -22,9 +22,10 @@ class Todo {
         this.addToStorage()
     }
 
-    createItem(todo) {
+    createItem(todo, index) {
         const li = document.createElement('li')
         li.classList.add('todo-item')
+        li.setAttribute('data-key', `${todo.key}`)
         li.insertAdjacentHTML('beforeend', `
         <span class="text-todo">${todo.value}</span>
         <div class="todo-buttons">
@@ -44,7 +45,7 @@ class Todo {
         if (this.input.value.trim()) {
             const newToDo = {
                 value: this.input.value,
-                completed: true,
+                completed: false,
                 key: this.generateKey()
             }
             this.todoData.set(newToDo.key, newToDo)
@@ -59,24 +60,55 @@ class Todo {
     }
 
     deleteItem(target) {
-        console.log(this.todoData);
-        // target.closest('.todo-item').remove()
-    //    по ключу найти элемент и удалить его из Мап
+        this.todoData.delete(`${target.closest('.todo-item').getAttribute('data-key')}`)
+        this.addToStorage()
+        let count = 1
+        const anim = () => {
+            count -= 0.2
+            target.closest('.todo-item').style.opacity = `${count}`
+
+            if (count > 0) {
+                setTimeout(anim, 100)
+        }
+            if (count === 0) {
+                target.closest('.todo-item').remove()
+            }
+        }
+        anim()
+        setTimeout(() => {
+            target.closest('.todo-item').remove()
+        }, 500)
+
+        //    по ключу найти элемент и удалить его из Мап
     }
 
-    completedItem() {
-    //    перебрать тодуДата, и найти элемент который мы нажали и изменить с тру на фолс или наоборот
+    completedItem(target) {
+        let todo = this.todoData.get(`${target.closest('.todo-item').getAttribute('data-key')}`)
+        this.todoData.forEach(item => {
+            if (item.key === todo.key) {
+                item.completed = item.completed === false;
+            }
+        })
+        this.render()
+        //    перебрать тодуДата, и найти элемент который мы нажали и изменить с тру на фолс или наоборот
+    }
+    delegation(event) {
+        let target = event.target
+        console.log(target)
+        if (target.matches('.todo-remove')) {
+            this.deleteItem(target)
+        } if (target.matches('.todo-complete')) {
+            this.completedItem(target)
+        }
     }
 
     handler() {
     //    делегирование
         this.todoList.addEventListener('click', (event) => {
-
-            let target = event.target
-            console.log(target)
-            if (target.matches('.todo-remove')) {
-                this.deleteItem(target)
-            }
+            this.delegation(event)
+        })
+        this.todoCompleted.addEventListener('click', (event) => {
+            this.delegation(event)
         })
     }
 
