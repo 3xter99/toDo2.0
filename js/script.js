@@ -22,13 +22,14 @@ class Todo {
         this.addToStorage()
     }
 
-    createItem(todo, index) {
+    createItem(todo) {
         const li = document.createElement('li')
         li.classList.add('todo-item')
         li.setAttribute('data-key', `${todo.key}`)
         li.insertAdjacentHTML('beforeend', `
         <span class="text-todo">${todo.value}</span>
         <div class="todo-buttons">
+        <button class="todo-edit"></button>
         <button class="todo-remove"></button>
         <button class="todo-complete"></button>
         </div>
@@ -50,6 +51,7 @@ class Todo {
             }
             this.todoData.set(newToDo.key, newToDo)
             this.render()
+            this.input.value = ''
         } else alert('Пустое дело добавлять нельзя')
 
 
@@ -58,10 +60,7 @@ class Todo {
     generateKey() {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     }
-
-    deleteItem(target) {
-        this.todoData.delete(`${target.closest('.todo-item').getAttribute('data-key')}`)
-        this.addToStorage()
+    animationToDo(target) {
         let count = 1
         const anim = () => {
             count -= 0.2
@@ -69,15 +68,20 @@ class Todo {
 
             if (count > 0) {
                 setTimeout(anim, 100)
-        }
-            if (count === 0) {
-                target.closest('.todo-item').remove()
             }
         }
         anim()
+
+    }
+
+    deleteItem(target) {
+        this.todoData.delete(`${target.closest('.todo-item').getAttribute('data-key')}`)
+        this.addToStorage()
+        this.animationToDo(target)
         setTimeout(() => {
             target.closest('.todo-item').remove()
         }, 500)
+
 
         //    по ключу найти элемент и удалить его из Мап
     }
@@ -86,19 +90,35 @@ class Todo {
         let todo = this.todoData.get(`${target.closest('.todo-item').getAttribute('data-key')}`)
         this.todoData.forEach(item => {
             if (item.key === todo.key) {
-                item.completed = item.completed === false;
+                    item.completed = item.completed === false;
             }
         })
         this.render()
         //    перебрать тодуДата, и найти элемент который мы нажали и изменить с тру на фолс или наоборот
     }
+    edit(target) {
+        target.closest('.todo-item').setAttribute('contenteditable', true)
+        let toDo = this.todoData.get(`${target.closest('.todo-item').getAttribute('data-key')}`)
+        target.closest('.todo-item').addEventListener('focusout', () => {
+                    let value = this.todoData.get(toDo.key)
+                    value = {...value, value: target.closest('.todo-item').innerText}
+                    this.todoData.set(toDo.key, value)
+                    this.addToStorage()
+        })
+
+    }
     delegation(event) {
         let target = event.target
-        console.log(target)
         if (target.matches('.todo-remove')) {
             this.deleteItem(target)
         } if (target.matches('.todo-complete')) {
-            this.completedItem(target)
+            this.animationToDo(target)
+            setTimeout(() => {
+                this.completedItem(target)
+            }, 500)
+
+        } if (target.matches('.todo-edit')) {
+            this.edit(target)
         }
     }
 
